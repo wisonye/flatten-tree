@@ -1,14 +1,15 @@
 [package]
-name = "simple-fast-tree-macros"
+name = "flatten-tree-macros"
 version = "0.1.0"
 authors = ["“WisonYe” <wisonye@gmail.com>"]
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
+# When using Cargo, Procedural macro crates are defined with the `proc-macro`
+# key in your manifest:
 [lib]
 proc-macro = true
 
 [dependencies]
 syn = {vesion = "1.0.39", features = ["extra-traits"]}
 quote = "1.0.7"
+# proc-macro2 = "1.0.20"

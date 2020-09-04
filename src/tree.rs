@@ -1,16 +1,23 @@
 //!
 //!
 
-/// All node structs should apply the `derive` marco like this:
-///
-/// `#[derive(SimpleFastNode)]`
-///
-/// After that, any struct will become a tree node struct which implement this trait which is
-/// the key to make this tree behavior works.
-pub trait SimpleFastTreeNode {
-    fn generate_tree_node_hashmap_key(&self) -> String;
+use std::collections::HashMap;
 
-    fn get_data(&self) {
-        println!("'get_data' get called >>>>>>>>>>>>>>>>>");
-    }
+// Re-export
+pub use crate::tree_common::FlattenTreeNodeExt;
+
+
+///
+pub struct FlattenTree {
+    internal_hash_map: HashMap<String, Box<dyn FlattenTreeNodeExt>>
 }
+
+
+// impl<T> SimpleFastTree<T> {
+// 
+    // pub from_vec(root_nodes_vec: Vec<T>) -> Self {
+        // SimpleFastTree {
+            // internal_hash_map: HashMap::new()
+        // }
+    // }
+// }

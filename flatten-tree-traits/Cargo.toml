@@ -1,5 +1,5 @@
 [package]
-name = "simple-fast-tree-traits"
+name = "flatten-tree-traits"
 version = "0.1.0"
 authors = ["“WisonYe” <wisonye@gmail.com>"]
 edition = "2018"

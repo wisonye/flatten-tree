@@ -2,20 +2,67 @@
 //! and then return back an output `TokenStream`. In other words, just take some code as input and
 //! generate back the new code as the output.
 //!
+//! More details at [here](https://doc.rust-lang.org/reference/procedural-macros.html)
+//!
 //! The `syn` crate helps us to analyze the input `TokenStream` and get back the syntax tree which
 //! is a `DeriveInput` instance. We can use that instance to get back the meta data of the data
 //! type and help us to write our output code.
+
+extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{
     parse_macro_input, punctuated::Punctuated, token::Comma, Data, DeriveInput, Field, Fields,
-    Ident, Path, Type,
+    Ident,
 };
 
+// /// Example to define the outer attribute macro
+// #[proc_macro_attribute]
+// pub fn title(attr: TokenStream, item: TokenStream) -> TokenStream {
+    // println!("attr: \"{}\"", attr.to_string());
+    // println!("item: \"{}\"", item.to_string());
+// 
+    // item
+// }
+
 /// The derive macro which will applied on a particular `struct` to implement some important traits.
-#[proc_macro_derive(Searchable)]
-pub fn derive(input: TokenStream) -> TokenStream {
+///
+/// - `FlattenTreeNode` is the macro name.
+///
+/// - `attributes(title, searchable))` enable the helper attributes. 
+///
+/// But we got a bug here:
+///
+/// As the `derive macro helper attributes` should be `inert` attribute which can apply to the struct 
+/// field like below, but you will get back the error:
+///
+/// **`cannot find attribute 'title' in this scope`**:
+///
+/// ```rust
+/// #[derive(FlattenTreeNode, Debug)]
+/// struct Compnay {
+///     #[title]
+///     name: String,
+///     #[searchable]
+///     address: String
+/// }
+/// ```
+///
+/// So the workaround at this moment is that apply the helper attribute on the outer part like
+/// below:
+///
+/// ```rust
+/// #[title(field_name = "name")]
+/// #[searchable(field_names = "address")]
+/// #[derive(FlattenTreeNode, Debug)]
+/// struct Compnay {
+///     name: String,
+///     address: String
+/// }
+/// ```
+#[proc_macro_derive(FlattenTreeNode, attributes(title, searchable))]
+pub fn derive_flatten_tree_node(input: TokenStream) -> TokenStream {
     // Parse the input tokens into a syntax tree
     let ast = parse_macro_input!(input as DeriveInput);
 
@@ -110,12 +157,12 @@ pub fn derive(input: TokenStream) -> TokenStream {
 
         // We implement the important traits privately
         impl #struct_name {
-            pub fn new() -> #proxy_struct_ident {
-                #proxy_struct_ident {
+            pub fn new() -> #struct_name {
+                #struct_name {
                     name: "Google .Inc".to_owned(),
                     address: "US Address".to_owned(),
                     ceo: "Wison Ye".to_owned(),
-                    // departments: None
+                    departments: None
                 }
             }
         }
@@ -123,15 +170,14 @@ pub fn derive(input: TokenStream) -> TokenStream {
         impl #proxy_struct_ident {
         }
 
-        impl #tree_node_trait_name for #proxy_struct_ident {
-            fn generate_tree_node_hashmap_key(&self) -> String {
-                format!(#hashkey_format_string_part, #(#hashkey_format_value_part)*)
-            }
-        }
+        // impl #tree_node_trait_name for #struct_name {
+            // fn generate_tree_node_hashmap_key(&self) -> String {
+                // format!(#hashkey_format_string_part, #(#hashkey_format_value_part)*)
+            // }
+        // }
     };
 
     // Hand the output tokens back to the compiler
     //
     TokenStream::from(expanded)
-
 }
