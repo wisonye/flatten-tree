@@ -17,24 +17,16 @@ use syn::{
     Ident,
 };
 
-// /// Example to define the outer attribute macro
-// #[proc_macro_attribute]
-// pub fn title(attr: TokenStream, item: TokenStream) -> TokenStream {
-    // println!("attr: \"{}\"", attr.to_string());
-    // println!("item: \"{}\"", item.to_string());
-// 
-    // item
-// }
 
 /// The derive macro which will applied on a particular `struct` to implement some important traits.
 ///
 /// - `FlattenTreeNode` is the macro name.
 ///
-/// - `attributes(title, searchable))` enable the helper attributes. 
+/// - `attributes(title, searchable))` enable the helper attributes.
 ///
 /// But we got a bug here:
 ///
-/// As the `derive macro helper attributes` should be `inert` attribute which can apply to the struct 
+/// As the `derive macro helper attributes` should be `inert` attribute which can apply to the struct
 /// field like below, but you will get back the error:
 ///
 /// **`cannot find attribute 'title' in this scope`**:
@@ -69,29 +61,25 @@ pub fn derive_flatten_tree_node(input: TokenStream) -> TokenStream {
     // Original struct name (`Ident` instance)
     let struct_name = &ast.ident;
 
-    // Generate the proxy struct based on the original struct name, it's an `Ident` instance.
-    // `struct_name`.span()` can help the compiler to track the original error source (if error
-    // happens)
-    let proxy_struct_ident =
-        Ident::new(format!("Inner{}", struct_name).as_str(), struct_name.span());
-
     // Generate the trait `Ident`
     let trait_name = Ident::new("GenerateTreeNodeHashmapKey", struct_name.span());
     let tree_node_trait_name = Ident::new("SimpleFastTreeNode", struct_name.span());
-    // println!("ast {:#?}", ast);
+    println!("ast {:#?}", ast);
 
-    // Get back all the  `fields` in the original struct, ignore the `Enum` and `Union` cases.
+    // Get back all the `fields` in the original struct, ignore the `Enum` and `Union` cases.
     // As the `Punctuated<Field, Comma>` has the `iter()` which allows us to walk through each
     // field manually.
     let struct_fields: Option<Punctuated<Field, Comma>> = match ast.data {
         Data::Struct(data_struct) => match data_struct.fields {
             Fields::Named(named_fields) => Some(named_fields.named),
-            _ => None,
+            _ => panic!("'FlattenTreeNode' struct got empty fields.")
         },
-        Data::Enum(_) => None,
-        Data::Union(_) => None,
+        Data::Enum(_) => panic!("'FlattenTreeNode' currently NOT support `enum` yet."),
+        Data::Union(_) => panic!("'FlattenTreeNode' currently NOT support `Union` yet."),
     };
+
     let struct_fields_ref = struct_fields.as_ref().unwrap();
+    if struct_fields_ref.len() <= 0 { panic!("'FlattenTreeNode' struct got empty fields.")}
 
     // println!("struct_fields: {:#?}", struct_fields);
 
@@ -142,42 +130,19 @@ pub fn derive_flatten_tree_node(input: TokenStream) -> TokenStream {
     // Build the output, possibly using quasi-quotation
     let expanded = quote! {
 
-        // The inner struct we will generated as a `proxy` for the original struct
-        #[derive(Debug)]
-        pub struct #proxy_struct_ident {
-            // We can use this syntax to apply all the fields into the proxy struct
-            #struct_fields
-
-            // Also, we can use this syntax to apply all original struct fields as well:
-            // #(#struct_fields,)*
-            //
-            // It's talking about iterate all in `#struct_fields`.
-            // #(#wrapped_in_option_type_fields,)*
-        }
-
         // We implement the important traits privately
         impl #struct_name {
-            pub fn new() -> #struct_name {
-                #struct_name {
-                    name: "Google .Inc".to_owned(),
-                    address: "US Address".to_owned(),
-                    ceo: "Wison Ye".to_owned(),
-                    departments: None
-                }
-            }
-        }
-
-        impl #proxy_struct_ident {
-        }
-
-        // impl #tree_node_trait_name for #struct_name {
-            // fn generate_tree_node_hashmap_key(&self) -> String {
-                // format!(#hashkey_format_string_part, #(#hashkey_format_value_part)*)
+            // pub fn new() -> #struct_name {
+                // #struct_name {
+                    // name: "Google .Inc".to_owned(),
+                    // address: "US Address".to_owned(),
+                    // ceo: "Wison Ye".to_owned(),
+                    // departments: None
+                // }
             // }
-        // }
+        }
     };
 
     // Hand the output tokens back to the compiler
-    //
     TokenStream::from(expanded)
 }
