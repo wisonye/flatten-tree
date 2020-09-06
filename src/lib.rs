@@ -10,8 +10,8 @@ mod tests {
 
     #[test]
     fn build_from_tree_like_vec() {
-        // #[title(struct_name = "Company", value=["value1", "value2"])]
-        // #[searchable(key = "key1, key2", value=["value1", "value2"])]
+        #[title(field_name = "name")]
+        #[searchable(field_names = "address, ceo")]
         #[derive(FlattenTreeNode, Debug)]
         struct Company {
             name: String,
@@ -117,7 +117,7 @@ mod tests {
             departments: None,
         };
 
-        let my_company = Company::new();
+        // let my_company = Company::new();
         // println!("my_company: {:#?}", &my_company);
         // println!(
         // "my_company hashkey value: {:?}",
